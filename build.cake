@@ -27,6 +27,7 @@ Task("Version")
 	{
 		version = GitVersion(new GitVersionSettings
 		{
+			RepositoryPath = RepoRoot,
 			UpdateAssemblyInfo = true,
 			UpdateAssemblyInfoFilePath = $"{RepoRoot}/src/VersionAssemblyInfo.cs",
 			ArgumentCustomization = args => args.Append("-ensureassemblyinfo")
