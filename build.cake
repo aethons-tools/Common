@@ -3,19 +3,23 @@
 #tool "ReportGenerator"
 #tool "GitVersion.CommandLine"
 
+// Get command line arguments 
 var target = Argument("target", "Default");
 var configuration = Argument("config", "Release");
 
-const string ArtifactsFolder = "./artifacts";
-const string TestingFolder = "./testing";
+// Set up paths
+const string RepoRoot = "..";
+const string BuildFolder = RepoRoot + "/build";
+const string ArtifactsFolder = BuildFolder + "/artifacts";
+const string TestingFolder = BuildFolder + "/testing";
 
+// share the git version with everyone
 GitVersion version;
 
 Task("Clean")
 	.Does(() =>
 	{
-		CleanDirectory(ArtifactsFolder);
-		CleanDirectory(TestingFolder);
+		CleanDirectory(BuildFolder);
 	});
 	
 Task("Version")
@@ -24,7 +28,7 @@ Task("Version")
 		version = GitVersion(new GitVersionSettings
 		{
 			UpdateAssemblyInfo = true,
-			UpdateAssemblyInfoFilePath = "../src/VersionAssemblyInfo.cs",
+			UpdateAssemblyInfoFilePath = $"{RepoRoot}/src/VersionAssemblyInfo.cs",
 			ArgumentCustomization = args => args.Append("-ensureassemblyinfo")
 		});
 	});
@@ -34,7 +38,14 @@ Task("Build")
 	.IsDependentOn("Version")
 	.Does(() =>
 	{
-		MSBuild(solutionToBuild, new MSBuildSettings
+		var segments = Directory(Environment.CurrentDirectory).Path.Segments;
+		var repoName = segments[segments.Length - 2];
+		var solutionName = $"{RepoRoot}/{repoName}.sln";
+		
+		if (!FileExists(solutionName))
+			throw new Exception($"Could not find {solutionName}");
+			
+		MSBuild(solutionName, new MSBuildSettings
 		{
 			Configuration = configuration
 		});
@@ -45,9 +56,9 @@ Task("Test")
 	.IsDependentOn("Build")
 	.Does(() =>
 	{		
-		var dir = Directory(TestingFolder);
-		
-		var testAssemblies = testProjects.Select(tp =>
+		CreateDirectory(TestingFolder);
+
+		var testAssemblies = GetFiles($"{RepoRoot}/test/**/*.csproj").Select(tp =>
 		{
 			var path = tp.ToString();
 			var name = System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(path), ".dll");
@@ -55,11 +66,12 @@ Task("Test")
 			return MakeAbsolute(File(newPath));
 		}).ToArray();
 		
+		var openCoverSettings = GetFiles($"{RepoRoot}/src/**/*.csproj")
+			.Aggregate(new OpenCoverSettings(), (a, p) => a.WithFilter($"+[{p.GetFilenameWithoutExtension()}]*"));
 		OpenCover(t => 
 			t.NUnit3(testAssemblies, new NUnit3Settings {Results = $"{TestingFolder}/testresults.xml" }),
 		 	File($"{TestingFolder}/coverresults.xml"),
-		 	new OpenCoverSettings()
-		 		.WithFilter("+[AethonsTools.*]*")// TODO
+		 	openCoverSettings
 		 );
 		 
 		 ReportGenerator($"{TestingFolder}/coverresults.xml", $"{TestingFolder}/coverage");
@@ -70,10 +82,15 @@ Task("Package")
 	.Does(() =>
 	{
 		CreateDirectory(ArtifactsFolder);
-		NuGetPack(projectsToPackage, new NuGetPackSettings
+
+		var properties = new Dictionary<string, string>();
+		properties["Configuration"] = configuration;
+		
+		NuGetPack(GetFiles($"{RepoRoot}/src/**/*.csproj"), new NuGetPackSettings
 		{
 			OutputDirectory = ArtifactsFolder,
-			Version = version.NuGetVersionV2
+			Version = version.NuGetVersionV2,
+			Properties = properties
 		});
 	});
 	
