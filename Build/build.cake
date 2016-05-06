@@ -14,6 +14,14 @@ const string BuildFolder = RepoRoot + "/build";
 const string ArtifactsFolder = BuildFolder + "/artifacts";
 const string TestingFolder = BuildFolder + "/testing";
 
+// find out where we are
+var segments = Directory(Environment.CurrentDirectory).Path.Segments;
+var repoName = segments[segments.Length - 3];
+
+var ProjectUrl = $"https://github.com/aethons-tools/{repoName}";
+var LicenseUrl = $"https://github.com/aethons-tools/{repoName}/blob/master/LICENSE.md";
+const string IconUrl = "https://github.com/aethons-tools/Common/Images/nuget-icon.png";
+
 // share the git version with everyone
 GitVersion version;
 
@@ -28,10 +36,13 @@ Task("Version")
 	{
 		version = GitVersion(new GitVersionSettings
 		{
-			RepositoryPath = RepoRoot,
-			UpdateAssemblyInfo = true,
-			UpdateAssemblyInfoFilePath = $"Common/AssemblyInfo.Version.cs", // relative to the RepositoryPath
-			ArgumentCustomization = args => args.Append("-ensureassemblyinfo")
+			RepositoryPath = RepoRoot
+		});
+		
+		CreateAssemblyInfo($"{CommonRoot}/AssemblyInfo.Version.cs", new AssemblyInfoSettings {
+			Version = version.AssemblySemVer,
+			FileVersion = $"{version.MajorMinorPatch}.{version.BuildMetaData}",
+			InformationalVersion = version.NuGetVersionV2
 		});
 	});
 	
@@ -40,8 +51,6 @@ Task("Build")
 	.IsDependentOn("Version")
 	.Does(() =>
 	{
-		var segments = Directory(Environment.CurrentDirectory).Path.Segments;
-		var repoName = segments[segments.Length - 3];
 		var solutionName = $"{RepoRoot}/{repoName}.sln";
 		
 		if (!FileExists(solutionName))
@@ -92,6 +101,10 @@ Task("Package")
 		{
 			OutputDirectory = ArtifactsFolder,
 			Version = version.NuGetVersionV2,
+			ProjectUrl = new Uri(ProjectUrl),
+			IconUrl = new Uri(IconUrl),
+			LicenseUrl = new Uri(LicenseUrl),
+			IncludeReferencedProjects = true,
 			Properties = properties
 		});
 	});
