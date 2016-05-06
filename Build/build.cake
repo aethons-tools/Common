@@ -23,7 +23,7 @@ var LicenseUrl = $"https://github.com/aethons-tools/{repoName}/blob/master/LICEN
 const string IconUrl = "https://github.com/aethons-tools/Common/Images/nuget-icon.png";
 
 // share the git version with everyone
-GitVersion version;
+string NuGetVersion;
 
 Task("Clean")
 	.Does(() =>
@@ -34,15 +34,17 @@ Task("Clean")
 Task("Version")
 	.Does(() =>
 	{
-		version = GitVersion(new GitVersionSettings
+		var version = GitVersion(new GitVersionSettings
 		{
 			RepositoryPath = RepoRoot
 		});
 		
+		NuGetVersion = $"{version.NuGetVersionV2}-build{int.Parse(version.BuildMetaData).ToString("D4")}";
+		
 		CreateAssemblyInfo($"{CommonRoot}/AssemblyInfo.Version.cs", new AssemblyInfoSettings {
 			Version = version.AssemblySemVer,
 			FileVersion = $"{version.MajorMinorPatch}.{version.BuildMetaData}",
-			InformationalVersion = version.NuGetVersionV2
+			InformationalVersion = NuGetVersion
 		});
 	});
 	
@@ -100,7 +102,7 @@ Task("Package")
 		NuGetPack(GetFiles($"{RepoRoot}/src/**/*.csproj"), new NuGetPackSettings
 		{
 			OutputDirectory = ArtifactsFolder,
-			Version = version.NuGetVersionV2,
+			Version = NuGetVersion,
 			ProjectUrl = new Uri(ProjectUrl),
 			IconUrl = new Uri(IconUrl),
 			LicenseUrl = new Uri(LicenseUrl),
