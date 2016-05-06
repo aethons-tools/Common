@@ -20,7 +20,7 @@ var repoName = segments[segments.Length - 3];
 
 var ProjectUrl = $"https://github.com/aethons-tools/{repoName}";
 var LicenseUrl = $"https://github.com/aethons-tools/{repoName}/blob/master/LICENSE.md";
-const string IconUrl = "https://github.com/aethons-tools/Common/Images/nuget-icon.png";
+const string IconUrl = "https://raw.githubusercontent.com/aethons-tools/Common/master/Images/nuget-icon.png";
 
 // share the git version with everyone
 string NuGetVersion;
