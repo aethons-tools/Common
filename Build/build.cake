@@ -99,7 +99,7 @@ Task("Package")
 		var properties = new Dictionary<string, string>();
 		properties["Configuration"] = configuration;
 		
-		NuGetPack(GetFiles($"{RepoRoot}/src/**/*.csproj"), new NuGetPackSettings
+		NuGetPack(GetFiles($"{RepoRoot}/src/**/*.nuspec"), new NuGetPackSettings
 		{
 			OutputDirectory = ArtifactsFolder,
 			Version = NuGetVersion,
