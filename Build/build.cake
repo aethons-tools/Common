@@ -8,7 +8,8 @@ var target = Argument("target", "Default");
 var configuration = Argument("config", "Release");
 
 // Set up paths
-const string RepoRoot = "..";
+const string CommonRoot = "..";
+const string RepoRoot = "../..";
 const string BuildFolder = RepoRoot + "/build";
 const string ArtifactsFolder = BuildFolder + "/artifacts";
 const string TestingFolder = BuildFolder + "/testing";
@@ -29,7 +30,7 @@ Task("Version")
 		{
 			RepositoryPath = RepoRoot,
 			UpdateAssemblyInfo = true,
-			UpdateAssemblyInfoFilePath = $"{RepoRoot}/src/VersionAssemblyInfo.cs",
+			UpdateAssemblyInfoFilePath = $"Common/AssemblyInfo.Version.cs", // relative to the RepositoryPath
 			ArgumentCustomization = args => args.Append("-ensureassemblyinfo")
 		});
 	});
@@ -40,7 +41,7 @@ Task("Build")
 	.Does(() =>
 	{
 		var segments = Directory(Environment.CurrentDirectory).Path.Segments;
-		var repoName = segments[segments.Length - 2];
+		var repoName = segments[segments.Length - 3];
 		var solutionName = $"{RepoRoot}/{repoName}.sln";
 		
 		if (!FileExists(solutionName))
@@ -113,9 +114,10 @@ Task("PublishLocal")
 	
 Task("Default")
 	.IsDependentOn("PublishLocal")
-	.Does(() =>
-	{
-		
-	});
+	.Does(() => {});
+	
+Task("Init")
+	.IsDependentOn("Version")
+	.Does(() => {});
 	
 RunTarget(target);
