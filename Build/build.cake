@@ -96,10 +96,15 @@ Task("Package")
 	{
 		CreateDirectory(ArtifactsFolder);
 
+		var packageableProjects = GetFiles($"{RepoRoot}/src/**/*.nuspec")
+			.Select(f => f.ChangeExtension(".csproj"))
+			.Where(FileExists)
+			.ToArray();
+			
 		var properties = new Dictionary<string, string>();
 		properties["Configuration"] = configuration;
 		
-		NuGetPack(GetFiles($"{RepoRoot}/src/**/*.nuspec"), new NuGetPackSettings
+		NuGetPack(packageableProjects, new NuGetPackSettings
 		{
 			OutputDirectory = ArtifactsFolder,
 			Version = NuGetVersion,
