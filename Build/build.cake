@@ -103,14 +103,14 @@ Task("Package")
 			
 		var properties = new Dictionary<string, string>();
 		properties["Configuration"] = configuration;
+		properties["ProjectUrl"] = ProjectUrl;
+		properties["IconUrl"] = IconUrl;
+		properties["LicenseUrl"] = LicenseUrl;
 		
 		NuGetPack(packageableProjects, new NuGetPackSettings
 		{
 			OutputDirectory = ArtifactsFolder,
 			Version = NuGetVersion,
-			ProjectUrl = new Uri(ProjectUrl),
-			IconUrl = new Uri(IconUrl),
-			LicenseUrl = new Uri(LicenseUrl),
 			IncludeReferencedProjects = true,
 			Properties = properties
 		});
